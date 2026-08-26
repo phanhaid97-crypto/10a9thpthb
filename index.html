@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>💖 3D Cube - Danh Sách Tên Hồng Phát Sáng</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      overflow: hidden; 
+      background: #0a0a1a; 
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    canvas { display: block; }
+
+    /* ===== MÀN HÌNH CHÀO ===== */
+    #welcomeScreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1000;
+      background: radial-gradient(ellipse at center, #0a0a2e 0%, #000000 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      transition: opacity 0.8s ease;
+    }
+    #welcomeScreen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .warning-icon { font-size: 72px; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    #warningText {
+      color: #ff4444;
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 0 30px rgba(255, 68, 68, 0.3);
+      letter-spacing: 2px;
+      max-width: 700px;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    #warningText .highlight { color: #ffaa00; background: rgba(255,170,0,0.15); padding: 2px 10px; border-radius: 8px; }
+    #warningText .cấm {
+      color: #ff2222;
+      background: rgba(255,0,0,0.2);
+      padding: 2px 10px;
+      border-radius: 8px;
+      border: 2px solid #ff2222;
+      animation: blinkBorder 1s infinite;
+    }
+    @keyframes blinkBorder {
+      0%, 100% { border-color: #ff2222; }
+      50% { border-color: transparent; }
+    }
+
+    .instruction-icons {
+      display: flex;
+      gap: 40px;
+      margin: 20px 0 30px;
+      color: #aaa;
+      font-size: 16px;
+    }
+    .instruction-icons span {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .instruction-icons .icon-big { font-size: 40px; }
+    .instruction-icons .label { font-size: 14px; color: #888; }
+
+    #watchBtn {
+      background: linear-gradient(135deg, #ff4444, #cc0000);
+      color: white;
+      border: none;
+      padding: 18px 60px;
+      border-radius: 60px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 40px rgba(255, 68, 68, 0.3);
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+    #watchBtn:hover { transform: scale(1.05); box-shadow: 0 0 60px rgba(255, 68, 68, 0.5); }
+    #watchBtn:active { transform: scale(0.95); }
+    #footerNote { color: #333; font-size: 12px; margin-top: 30px; letter-spacing: 1px; }
+
+    /* ===== ADMIN PANEL ===== */
+    #adminPanel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(15px);
+      padding: 20px 25px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      min-width: 250px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+      transition: 0.3s;
+      display: none;
+    }
+    #adminPanel.active { display: block; }
+    #adminPanel:hover { border-color: rgba(100, 200, 255, 0.3); }
+    
+    #adminPanel h3 {
+      font-size: 14px;
+      color: #88ddff;
+      margin-bottom: 15px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 10px;
+    }
+    
+    #adminPanel label {
+      display: block;
+      font-size: 12px;
+      color: #aaa;
+      margin: 12px 0 5px;
+      font-weight: 300;
+    }
+    
+    #adminPanel input[type="file"] {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #adminPanel input[type="file"]:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: #88ddff;
+    }
+    #adminPanel input[type="file"]::file-selector-button {
+      background: #2a2a5a;
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      margin-right: 10px;
+    }
+    
+    #adminPanel textarea {
+      width: 100%;
+      height: 60px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: white;
+      padding: 10px;
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+      margin-top: 8px;
+      transition: 0.3s;
+    }
+    #adminPanel textarea:focus {
+      outline: none;
+      border-color: #88ddff;
+      background: rgba(255,255,255,0.08);
+    }
+    #adminPanel textarea::placeholder { color: #555; }
+    
+    #adminStatus {
+      font-size: 11px;
+      color: #0f0;
+      margin-top: 12px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* ===== GHI CHÚ ===== */
+    #noteDisplay {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      padding: 14px 28px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.8);
+      font-size: 15px;
+      max-width: 80%;
+      text-align: center;
+      pointer-events: none;
+      font-weight: 300;
+      letter-spacing: 0.5px;
+      transition: 0.5s;
+    }
+    #noteDisplay:empty { opacity: 0; }
+
+    #viewerHint {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      color: rgba(255,255,255,0.15);
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 300;
+      background: rgba(0,0,0,0.3);
+      padding: 8px 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.03);
+      display: none;
+    }
+    #viewerHint.show { display: block; }
+
+    #adminToggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.08);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-family: inherit;
+      letter-spacing: 1px;
+      display: none;
+    }
+    #adminToggle.show { display: block; }
+    #adminToggle:hover {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.3);
+    }
+
+    @media (max-width: 768px) {
+      #warningText { font-size: 20px; padding: 0 10px; }
+      .warning-icon { font-size: 50px; }
+      #watchBtn { padding: 14px 40px; font-size: 18px; }
+      .instruction-icons { gap: 20px; }
+      .instruction-icons .icon-big { font-size: 30px; }
+      #adminPanel {
+        top: 10px;
+        right: 10px;
+        padding: 15px;
+        min-width: 180px;
+        max-width: 85vw;
+      }
+      #noteDisplay { font-size: 13px; padding: 10px 20px; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== MÀN HÌNH CHÀO ===== -->
+  <div id="welcomeScreen">
+    <div class="warning-icon">💖</div>
+    <div id="warningText">
+      Bật <span class="highlight">full âm lượng</span> và <span class="highlight">full sáng</span><br>
+      (<span class="cấm">⛔ cấm sục/móc!!</span>)
+    </div>
+    <div class="instruction-icons">
+      <span><span class="icon-big">🔊</span><span class="label">Âm lượng MAX</span></span>
+      <span><span class="icon-big">☀️</span><span class="label">Độ sáng MAX</span></span>
+      <span><span class="icon-big">🚫</span><span class="label">Cấm sục/móc</span></span>
+    </div>
+    <button id="watchBtn">▶ XEM VIDEO</button>
+    <div id="footerNote">© 2026 - 3D Cube Experience</div>
+  </div>
+
+  <!-- ===== ADMIN PANEL ===== -->
+  <div id="adminPanel">
+    <h3>🔐 ADMIN CONTROL</h3>
+    <label>📷 Đổi ảnh cube</label>
+    <input type="file" id="imageInput" accept="image/*">
+    <label>🎵 Đổi nhạc nền</label>
+    <input type="file" id="musicInput" accept="audio/*">
+    <label>📝 Ghi chú</label>
+    <textarea id="noteInput" placeholder="Nhập ghi chú..."></textarea>
+    <div id="adminStatus">✅ Sẵn sàng</div>
+  </div>
+
+  <!-- ===== GHI CHÚ ===== -->
+  <div id="noteDisplay"></div>
+  <div id="viewerHint">🖱️ Kéo & thả để xoay cube</div>
+  <button id="adminToggle">⚙️</button>
+
+  <!-- ===== THREE.JS ===== -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ============ DANH SÁCH TÊN ============
+    const nameList = [
+      "Minh Anh", "Ngọc Anh", "Mai Anh", "Gia Bảo", "Thiên Bảo",
+      "Hải Đăng", "Tấn Đạt", "Thanh Ngọc Diệp", "Quốc Dũng", "Thùy Dương",
+      "Ánh Dương", "Thùy Ngân Hà", "Ngọc Bảo Hân", "Hoàng", "Mai Bảo Hoàng",
+      "Tấn Hưng", "Trọng Khang", "Duy Kiệt", "Thùy Lam", "Thị Linh Lan",
+      "Phương Linh", "Ngọc Phương Linh", "Khánh Ly", "Thảo My", "Nam",
+      "Kim Ngân", "Bích Ngọc", "Giáng Ngọc", "Thảo Nguyên", "Diễm Quyên",
+      "Như Quỳnh", "Nhật Anh Thi", "Thiên Thiên", "Anh Thư", "Khánh Thư",
+      "Đình Toàn", "Ngọc Bảo Trâm", "Hữu Trung", "Viết Trung",
+      "Duy Tường", "Vũ", "Khả Vy", "Yến Vy", "Như Ý"
+    ];
+
+    // ============ DOM ============
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const watchBtn = document.getElementById('watchBtn');
+    const viewerHint = document.getElementById('viewerHint');
+    const adminToggle = document.getElementById('adminToggle');
+    const adminPanel = document.getElementById('adminPanel');
+    const noteDisplay = document.getElementById('noteDisplay');
+    const noteInput = document.getElementById('noteInput');
+
+    // ============ BIẾN ============
+    let scene, camera, renderer, labelRenderer, controls;
+    let cube, cubeGlow, wireframe;
+    let nameObjects = [];
+    let heartObjects = [];
+    let cloudObjects = [];
+    let audioContext = null;
+    let analyser = null;
+    let dataArray = null;
+    let isPlaying = false;
+    let sourceNode = null;
+    let mainLight;
+    let is3DReady = false;
+    let time = 0;
+
+    // ============ BẤM XEM VIDEO ============
+    watchBtn.addEventListener('click', function() {
+      console.log('🎬 Bấm XEM VIDEO');
+      
+      welcomeScreen.classList.add('hidden');
+      viewerHint.classList.add('show');
+      adminToggle.classList.add('show');
+      
+      if (!is3DReady) {
+        console.log('🚀 Khởi tạo 3D...');
+        init3D();
+        is3DReady = true;
+      }
+      
+      // Kích hoạt AudioContext
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('✅ AudioContext resumed');
+          if (sourceNode && !isPlaying) {
+            try {
+              sourceNode.start(0);
+              isPlaying = true;
+              document.getElementById('adminStatus').textContent = '🎵 Đang phát nhạc!';
+              document.getElementById('adminStatus').style.color = '#0f0';
+            } catch(e) {
+              console.log('Nhạc đã phát rồi');
+            }
+          }
+        });
+      }
+    });
+
+    // ============ TẠO GLOW TEXTURE ============
+    function createGlowTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gradient.addColorStop(0, 'rgba(255,255,255,1)');
+      gradient.addColorStop(0.2, 'rgba(255,200,255,0.8)');
+      gradient.addColorStop(0.5, 'rgba(255,150,255,0.3)');
+      gradient.addColorStop(1, 'rgba(255,100,255,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 256, 256);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    // ============ TẠO TRÁI TIM ============
+    function createHeart(scale = 0.3, color = 0xff3366) {
+      const shape = new THREE.Shape();
+      const x = 0, y = 0;
+      
+      shape.moveTo(x, y + 0.3 * scale);
+      shape.bezierCurveTo(x - 0.3 * scale, y + 0.6 * scale, x - 0.6 * scale, y + 0.3 * scale, x, y);
+      shape.bezierCurveTo(x + 0.6 * scale, y + 0.3 * scale, x + 0.3 * scale, y + 0.6 * scale, x, y + 0.3 * scale);
+      
+      const extrudeSettings = {
+        steps: 1,
+        depth: 0.15 * scale,
+        bevelEnabled: true,
+        bevelThickness: 0.08 * scale,
+        bevelSize: 0.04 * scale,
+        bevelSegments: 3,
+      };
+      
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      const material = new THREE.MeshStandardMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.9,
+      });
+      
+      const heart = new THREE.Mesh(geometry, material);
+      heart.geometry.center();
+      
+      // Glow cho tim
+      const glowMat = new THREE.SpriteMaterial({
+        map: createGlowTexture(),
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.5,
+        color: color,
+      });
+      const glow = new THREE.Sprite(glowMat);
+      glow.scale.set(1.5 * scale, 1.5 * scale, 1);
+      heart.add(glow);
+      
+      return heart;
+    }
+
+    // ============ TẠO MÂY ============
+    function createCloud() {
+      const group = new THREE.Group();
+      const numPuffs = 4 + Math.floor(Math.random() * 3);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0x4488ff,
+        emissiveIntensity: 0.05,
+        transparent: true,
+        opacity: 0.4 + Math.random() * 0.3,
+        roughness: 0.1,
+        metalness: 0.0,
+      });
+      
+      for (let i = 0; i < numPuffs; i++) {
+        const size = 0.3 + Math.random() * 0.5;
+        const geom = new THREE.SphereGeometry(size, 8, 8);
+        const puff = new THREE.Mesh(geom, material);
+        puff.position.set(
+          (Math.random() - 0.5) * 1.5,
+          (Math.random() - 0.5) * 0.5,
+          (Math.random() - 0.5) * 1.5
+        );
+        puff.scale.y = 0.6 + Math.random() * 0.4;
+        group.add(puff);
+      }
+      
+      const scale = 0.8 + Math.random() * 0.8;
+      group.scale.set(scale, scale * 0.6, scale);
+      group.userData = {
+        speed: 0.1 + Math.random() * 0.2,
+        angle: Math.random() * Math.PI * 2,
+        radius: 3 + Math.random() * 4,
+        height: (Math.random() - 0.5) * 3 + 1,
+      };
+      
+      return group;
+    }
+
+    // ============ TẠO TÊN BAY ============
+    function createNameLabel(text, color = '#ff66aa') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+      div.style.fontSize = '18px';
+      div.style.fontWeight = '700';
+      div.style.textShadow = `
+        0 0 10px ${color},
+        0 0 20px ${color},
+        0 0 40px ${color},
+        0 0 80px ${color}
+      `;
+      div.style.background = 'rgba(255,100,150,0.08)';
+      div.style.padding = '4px 14px';
+      div.style.borderRadius = '30px';
+      div.style.border = '1px solid rgba(255,100,180,0.2)';
+      div.style.backdropFilter = 'blur(5px)';
+      div.style.letterSpacing = '1px';
+      div.style.whiteSpace = 'nowrap';
+      
+      const label = new CSS2DObject(div);
+      
+      label.userData = {
+        angle: Math.random() * Math.PI * 2,
+        radius: 2.8 + Math.random() * 1.2,
+        height: (Math.random() - 0.5) * 2.5,
+        speed: 0.3 + Math.random() * 0.3,
+        rotSpeed: (Math.random() - 0.5) * 0.02,
+        phase: Math.random() * Math.PI * 2,
+      };
+      
+      return label;
+    }
+
+    // ============ KHỞI TẠO 3D ============
+    function init3D() {
+      // ----- SCENE -----
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a1a);
+
+      // ----- CAMERA -----
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(4, 3, 7);
+      camera.lookAt(0, 0, 0);
+
+      // ----- RENDERER -----
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      document.body.appendChild(renderer.domElement);
+
+      // ----- LABEL RENDERER (cho chữ) -----
+      labelRenderer = new CSS2DRenderer();
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.domElement.style.position = 'absolute';
+      labelRenderer.domElement.style.top = '0px';
+      labelRenderer.domElement.style.left = '0px';
+      labelRenderer.domElement.style.pointerEvents = 'none';
+      document.body.appendChild(labelRenderer.domElement);
+
+      // ----- CONTROLS -----
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.autoRotate = false;
+      controls.enableZoom = true;
+      controls.rotateSpeed = 0.8;
+      controls.target.set(0, 0.2, 0);
+      controls.update();
+
+      // ----- LIGHTS -----
+      const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
+      scene.add(ambientLight);
+
+      mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      mainLight.position.set(5, 8, 6);
+      mainLight.castShadow = true;
+      scene.add(mainLight);
+
+      const fillLight = new THREE.DirectionalLight(0x4488ff, 0.5);
+      fillLight.position.set(-4, 2, -3);
+      scene.add(fillLight);
+
+      const rimLight = new THREE.DirectionalLight(0xff66aa, 0.3);
+      rimLight.position.set(0, -3, 5);
+      scene.add(rimLight);
+
+      // ===== CUBE PHÁT SÁNG =====
+      const geometry = new THREE.BoxGeometry(2, 2, 2);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x4488ff,
+        roughness: 0.2,
+        metalness: 0.3,
+        emissive: new THREE.Color(0x4488ff),
+        emissiveIntensity: 0.3,
+      });
+      cube = new THREE.Mesh(geometry, material);
+      cube.castShadow = true;
+      cube.receiveShadow = true;
+      scene.add(cube);
+
+      // Lớp glow
+      const glowGeom = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0x4488ff,
+        transparent: true,
+        opacity: 0.08,
+        wireframe: true,
+      });
+      cubeGlow = new THREE.Mesh(glowGeom, glowMat);
+      cube.add(cubeGlow);
+
+      // Lớp glow 2
+      const glowGeom2 = new THREE.BoxGeometry(3.2, 3.2, 3.2);
+      const glowMat2 = new THREE.MeshBasicMaterial({
+        color: 0x88ddff,
+        transparent: true,
+        opacity: 0.03,
+        wireframe: true,
+      });
+      const cubeGlow2 = new THREE.Mesh(glowGeom2, glowMat2);
+      cube.add(cubeGlow2);
+
+      // Viền sáng
+      const edges = new THREE.EdgesGeometry(geometry);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x88ddff,
+        transparent: true,
+        opacity: 0.3
+      });
+      wireframe = new THREE.LineSegments(edges, lineMat);
+      cube.add(wireframe);
+
+      // ===== TẠO TÊN BAY QUANH =====
+      const colors = ['#ff66aa', '#ff88bb', '#ff44aa', '#ff99cc', '#ff55bb'];
+      
+      nameList.forEach((name, index) => {
+        const color = colors[index % colors.length];
+        const label = createNameLabel(name, color);
+        
+        const angle = (index / nameList.length) * Math.PI * 2;
+        const radius = 2.8 + Math.random() * 1.2;
+        const height = (Math.random() - 0.5) * 2.5;
+        
+        label.userData.angle = angle;
+        label.userData.radius = radius;
+        label.userData.height = height;
+        label.userData.speed = 0.2 + Math.random() * 0.2;
+        
+        label.position.set(
+          Math.cos(angle) * radius,
+          height,
+          Math.sin(angle) * radius
+        );
+        
+        scene.add(label);
+        nameObjects.push(label);
+      });
+
+      // ===== TẠO TRÁI TIM =====
+      const heartColors = [0xff3366, 0xff6699, 0xff0066, 0xff4488];
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const radius = 3.5;
+        const heart = createHeart(0.25 + Math.random() * 0.15, heartColors[i % heartColors.length]);
+        heart.position.set(
+          Math.cos(angle) * radius,
+          (Math.random() - 0.5) * 1.5,
+          Math.sin(angle) * radius
+        );
+        heart.userData = {
+          angle: angle,
+          radius: radius,
+          height: heart.position.y,
+          speed: 0.3 + Math.random() * 0.2,
+        };
+        scene.add(heart);
+        heartObjects.push(heart);
+      }
+
+      // ===== TẠO MÂY =====
+      for (let i = 0; i < 5; i++) {
+        const cloud = createCloud();
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 4 + Math.random() * 3;
+        cloud.position.set(
+          Math.cos(angle) * radius,
+          (Math.random() - 0.5) * 2 + 1.5,
+          Math.sin(angle) * radius
+        );
+        cloud.userData.angle = angle;
+        cloud.userData.radius = radius;
+        scene.add(cloud);
+        cloudObjects.push(cloud);
+      }
+
+      // ===== LOAD SAVED =====
+      loadSavedData();
+
+      // ===== AUDIO CONTEXT =====
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('🎵 AudioContext created');
+
+      // ===== START ANIMATION =====
+      animate();
+      console.log('✅ 3D initialized!');
+    }
+
+    // ============ LOAD SAVED ============
+    function loadSavedData() {
+      const savedNote = localStorage.getItem('cubeNote');
+      if (savedNote) {
+        noteInput.value = savedNote;
+        noteDisplay.textContent = savedNote;
+      }
+
+      const savedImage = localStorage.getItem('cubeImage');
+      if (savedImage) {
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load(savedImage);
+        cube.material.map = texture;
+        cube.material.emissive = new THREE.Color(0x000000);
+        cube.material.emissiveIntensity = 0;
+        cube.material.needsUpdate = true;
+      }
+    }
+
+    // ============ HỆ THỐNG ÂM THANH ============
+    async function initAudio(file) {
+      try {
+        if (sourceNode) {
+          try { sourceNode.stop(); } catch(e) {}
+          sourceNode = null;
+        }
+        isPlaying = false;
+
+        const arrayBuffer = await file.arrayBuffer();
+        if (!audioContext || audioContext.state === 'closed') {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 128;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        
+        sourceNode = audioContext.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+        sourceNode.loop = true;
+        sourceNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+        
+        sourceNode.start(0);
+        isPlaying = true;
+        
+        document.getElementById('adminStatus').textContent = '🎵 Đang phát: ' + file.name;
+        document.getElementById('adminStatus').style.color = '#0f0';
+        console.log('🎵 Đang phát nhạc!');
+        
+      } catch (err) {
+        console.error('❌ Lỗi âm thanh:', err);
+        document.getElementById('adminStatus').textContent = '❌ Lỗi: ' + err.message;
+        document.getElementById('adminStatus').style.color = '#f44';
+        isPlaying = false;
+      }
+    }
+
+    // ============ TẢI ẢNH ============
+    function loadImage(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load(e.target.result);
+        cube.material.map = texture;
+        cube.material.emissive = new THREE.Color(0x000000);
+        cube.material.emissiveIntensity = 0;
+        cube.material.needsUpdate = true;
+        localStorage.setItem('cubeImage', e.target.result);
+        document.getElementById('adminStatus').textContent = '✅ Ảnh đã tải: ' + file.name;
+        document.getElementById('adminStatus').style.color = '#0f0';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ============ XỬ LÝ SỰ KIỆN ADMIN ============
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      if (this.files.length > 0) loadImage(this.files[0]);
+    });
+
+    document.getElementById('musicInput').addEventListener('change', function(e) {
+      if (this.files.length > 0) initAudio(this.files[0]);
+    });
+
+    noteInput.addEventListener('input', function() {
+      const note = this.value;
+      noteDisplay.textContent = note;
+      localStorage.setItem('cubeNote', note);
+    });
+
+    // ============ BẬT ADMIN (CLICK 3 LẦN) ============
+    let clickCount = 0;
+    let clickTimer = null;
+    
+    adminToggle.addEventListener('click', function() {
+      clickCount++;
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+      
+      if (clickCount >= 3) {
+        adminPanel.classList.toggle('active');
+        clickCount = 0;
+        const status = document.getElementById('adminStatus');
+        if (adminPanel.classList.contains('active')) {
+          status.textContent = '🔓 Admin mode ON';
+          status.style.color = '#ff0';
+        } else {
+          status.textContent = '🔒 Admin mode OFF';
+          status.style.color = '#0f0';
+        }
+      }
+    });
+
+    // ============ ANIMATION ============
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.01;
+
+      // Cube tự xoay nhẹ
+      if (cube) {
+        cube.rotation.x += 0.002;
+        cube.rotation.y += 0.004;
+        cube.rotation.z += 0.001;
+        
+        // Glow nhấp nháy
+        if (cubeGlow) {
+          cubeGlow.material.opacity = 0.06 + Math.sin(time * 0.5) * 0.03;
+        }
+        
+        // Nhảy theo nhạc
+        if (isPlaying && analyser && dataArray) {
+          analyser.getByteFrequencyData(dataArray);
+          
+          let bass = 0;
+          const len = dataArray.length;
+          for (let i = 0; i < len * 0.3; i++) {
+            bass += dataArray[i];
+          }
+          bass = bass / (len * 0.3) / 255;
+          
+          const bounceHeight = (bass - 0.1) * 0.8;
+          cube.position.y = Math.max(0, bounceHeight);
+          
+          if (wireframe) {
+            wireframe.material.opacity = 0.2 + bass * 0.5;
+          }
+          
+          if (mainLight) {
+            mainLight.intensity = 1.2 + bass * 0.8;
+          }
+        }
+      }
+
+      // Tên bay vòng quanh
+      nameObjects.forEach((label) => {
+        const data = label.userData;
+        data.angle += data.speed * 0.02;
+        const radius = data.radius + Math.sin(time * data.speed + data.phase) * 0.3;
+        label.position.x = Math.cos(data.angle) * radius;
+        label.position.z = Math.sin(data.angle) * radius;
+        label.position.y = data.height + Math.sin(time * data.speed + data.phase) * 0.5;
+        
+        // Tự xoay nhẹ
+        label.rotation.y += data.rotSpeed || 0.01;
+      });
+
+      // Trái tim bay
+      heartObjects.forEach((heart) => {
+        const data = heart.userData;
+        data.angle += data.speed * 0.015;
+        heart.position.x = Math.cos(data.angle) * data.radius;
+        heart.position.z = Math.sin(data.angle) * data.radius;
+        heart.position.y = data.height + Math.sin(time * data.speed + data.angle) * 0.3;
+        heart.rotation.x = Math.sin(time + data.angle) * 0.2;
+        heart.rotation.z = Math.cos(time + data.angle) * 0.2;
+      });
+
+      // Mây bay
+      cloudObjects.forEach((cloud) => {
+        const data = cloud.userData;
+        data.angle += data.speed * 0.005;
+        cloud.position.x = Math.cos(data.angle) * data.radius;
+        cloud.position.z = Math.sin(data.angle) * data.radius;
+        cloud.rotation.y += 0.001;
+      });
+
+      controls.update();
+      
+      // Render cả 2
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    // ============ RESIZE ============
+    window.addEventListener('resize', () => {
+      if (camera) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      if (renderer) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      if (labelRenderer) {
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    });
+
+    // ============ HƯỚNG DẪN ============
+    console.log('🎯 HƯỚNG DẪN:');
+    console.log('1️⃣ Bấm "XEM VIDEO" để bắt đầu');
+    console.log('2️⃣ Kéo chuột xoay cube');
+    console.log('3️⃣ Admin: Click 3 lần vào ⚙️ để mở panel');
+    console.log('4️⃣ Chọn ảnh và nhạc của bạn');
+  </script>
+</body>
+</html>
