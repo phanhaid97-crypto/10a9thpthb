@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>💖 3D Cube - Danh Sách Tên Hồng Phát Sáng</title>
+  <title>10A9 - THPT HÒA BÌNH</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -279,7 +279,7 @@
 
   <!-- ===== MÀN HÌNH CHÀO ===== -->
   <div id="welcomeScreen">
-    <div class="warning-icon">💖</div>
+    <div class="warning-icon">🏫</div>
     <div id="warningText">
       Bật <span class="highlight">full âm lượng</span> và <span class="highlight">full sáng</span><br>
       (<span class="cấm">⛔ cấm sục/móc!!</span>)
@@ -290,14 +290,12 @@
       <span><span class="icon-big">🚫</span><span class="label">Cấm sục/móc</span></span>
     </div>
     <button id="watchBtn">▶ XEM VIDEO</button>
-    <div id="footerNote">© 2026 - 3D Cube Experience</div>
+    <div id="footerNote">© 2026 - 10A9 THPT HÒA BÌNH</div>
   </div>
 
   <!-- ===== ADMIN PANEL ===== -->
   <div id="adminPanel">
     <h3>🔐 ADMIN CONTROL</h3>
-    <label>📷 Đổi ảnh cube</label>
-    <input type="file" id="imageInput" accept="image/*">
     <label>🎵 Đổi nhạc nền</label>
     <input type="file" id="musicInput" accept="audio/*">
     <label>📝 Ghi chú</label>
@@ -307,7 +305,7 @@
 
   <!-- ===== GHI CHÚ ===== -->
   <div id="noteDisplay"></div>
-  <div id="viewerHint">🖱️ Kéo & thả để xoay cube</div>
+  <div id="viewerHint">🖱️ Kéo & thả để xoay</div>
   <button id="adminToggle">⚙️</button>
 
   <!-- ===== THREE.JS ===== -->
@@ -349,16 +347,16 @@
 
     // ============ BIẾN ============
     let scene, camera, renderer, labelRenderer, controls;
-    let cube, cubeGlow, wireframe;
+    let heartMesh, heartGlow;
     let nameObjects = [];
-    let heartObjects = [];
+    let smallTextObjects = [];
     let cloudObjects = [];
+    let particleSystem;
     let audioContext = null;
     let analyser = null;
     let dataArray = null;
     let isPlaying = false;
     let sourceNode = null;
-    let mainLight;
     let is3DReady = false;
     let time = 0;
 
@@ -376,7 +374,6 @@
         is3DReady = true;
       }
       
-      // Kích hoạt AudioContext
       if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
           console.log('✅ AudioContext resumed');
@@ -386,9 +383,7 @@
               isPlaying = true;
               document.getElementById('adminStatus').textContent = '🎵 Đang phát nhạc!';
               document.getElementById('adminStatus').style.color = '#0f0';
-            } catch(e) {
-              console.log('Nhạc đã phát rồi');
-            }
+            } catch(e) {}
           }
         });
       }
@@ -410,49 +405,124 @@
       return new THREE.CanvasTexture(canvas);
     }
 
-    // ============ TẠO TRÁI TIM ============
-    function createHeart(scale = 0.3, color = 0xff3366) {
+    // ============ TẠO TRÁI TIM 3D ============
+    function createHeart3D() {
+      // Tạo shape trái tim
       const shape = new THREE.Shape();
       const x = 0, y = 0;
+      const s = 1.2;
       
-      shape.moveTo(x, y + 0.3 * scale);
-      shape.bezierCurveTo(x - 0.3 * scale, y + 0.6 * scale, x - 0.6 * scale, y + 0.3 * scale, x, y);
-      shape.bezierCurveTo(x + 0.6 * scale, y + 0.3 * scale, x + 0.3 * scale, y + 0.6 * scale, x, y + 0.3 * scale);
+      shape.moveTo(x, y + 0.3 * s);
+      shape.bezierCurveTo(x - 0.3 * s, y + 0.6 * s, x - 0.6 * s, y + 0.3 * s, x, y);
+      shape.bezierCurveTo(x + 0.6 * s, y + 0.3 * s, x + 0.3 * s, y + 0.6 * s, x, y + 0.3 * s);
       
       const extrudeSettings = {
-        steps: 1,
-        depth: 0.15 * scale,
+        steps: 2,
+        depth: 0.8,
         bevelEnabled: true,
-        bevelThickness: 0.08 * scale,
-        bevelSize: 0.04 * scale,
-        bevelSegments: 3,
+        bevelThickness: 0.15,
+        bevelSize: 0.08,
+        bevelSegments: 8,
       };
       
       const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geometry.center();
+      
+      // Tạo texture chữ trên trái tim
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      
+      // Nền gradient hồng đậm
+      const grad = ctx.createRadialGradient(512, 512, 0, 512, 512, 500);
+      grad.addColorStop(0, '#ff2266');
+      grad.addColorStop(0.3, '#ee1155');
+      grad.addColorStop(0.7, '#cc0044');
+      grad.addColorStop(1, '#880033');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Viền sáng
+      ctx.shadowColor = '#ff4488';
+      ctx.shadowBlur = 30;
+      ctx.strokeStyle = '#ff6699';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+      
+      // Chữ chính
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#ff4488';
+      ctx.shadowBlur = 60;
+      
+      // Dòng 1: 10A9
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 180px Arial Black, sans-serif';
+      ctx.shadowBlur = 80;
+      ctx.fillText('10A9', canvas.width/2, canvas.height/2 - 80);
+      
+      // Dòng 2: THPT HÒA BÌNH
+      ctx.shadowBlur = 40;
+      ctx.fillStyle = '#ffdd99';
+      ctx.font = 'bold 70px Arial, sans-serif';
+      ctx.fillText('THPT HÒA BÌNH', canvas.width/2, canvas.height/2 + 110);
+      
+      // Dòng 3: 2026
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = 'bold 36px Arial, sans-serif';
+      ctx.fillText('2026', canvas.width/2, canvas.height - 50);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      
       const material = new THREE.MeshStandardMaterial({
-        color: color,
-        emissive: color,
-        emissiveIntensity: 0.8,
+        map: texture,
         roughness: 0.2,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.9,
+        metalness: 0.3,
+        emissive: new THREE.Color(0xff2266),
+        emissiveIntensity: 0.3,
+        side: THREE.DoubleSide,
       });
       
       const heart = new THREE.Mesh(geometry, material);
-      heart.geometry.center();
+      heart.scale.set(1.8, 1.8, 1.8);
+      heart.castShadow = true;
+      heart.receiveShadow = true;
       
-      // Glow cho tim
-      const glowMat = new THREE.SpriteMaterial({
+      // Lớp glow bao quanh trái tim
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xff4488,
+        transparent: true,
+        opacity: 0.06,
+        wireframe: true,
+      });
+      const glowGeom = new THREE.SphereGeometry(1.6, 16, 16);
+      heartGlow = new THREE.Mesh(glowGeom, glowMat);
+      heart.add(heartGlow);
+      
+      // Lớp glow thứ 2
+      const glowMat2 = new THREE.MeshBasicMaterial({
+        color: 0xff88aa,
+        transparent: true,
+        opacity: 0.03,
+        wireframe: true,
+      });
+      const glowGeom2 = new THREE.SphereGeometry(2.0, 16, 16);
+      const heartGlow2 = new THREE.Mesh(glowGeom2, glowMat2);
+      heart.add(heartGlow2);
+      
+      // Sprite glow
+      const spriteMat = new THREE.SpriteMaterial({
         map: createGlowTexture(),
         blending: THREE.AdditiveBlending,
         transparent: true,
-        opacity: 0.5,
-        color: color,
+        opacity: 0.3,
+        color: 0xff4488,
       });
-      const glow = new THREE.Sprite(glowMat);
-      glow.scale.set(1.5 * scale, 1.5 * scale, 1);
-      heart.add(glow);
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(4, 4, 1);
+      heart.add(sprite);
       
       return heart;
     }
@@ -464,45 +534,45 @@
       const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: 0x4488ff,
-        emissiveIntensity: 0.05,
+        emissiveIntensity: 0.03,
         transparent: true,
-        opacity: 0.4 + Math.random() * 0.3,
+        opacity: 0.2 + Math.random() * 0.15,
         roughness: 0.1,
         metalness: 0.0,
       });
       
       for (let i = 0; i < numPuffs; i++) {
-        const size = 0.3 + Math.random() * 0.5;
+        const size = 0.4 + Math.random() * 0.6;
         const geom = new THREE.SphereGeometry(size, 8, 8);
         const puff = new THREE.Mesh(geom, material);
         puff.position.set(
-          (Math.random() - 0.5) * 1.5,
-          (Math.random() - 0.5) * 0.5,
-          (Math.random() - 0.5) * 1.5
+          (Math.random() - 0.5) * 2.0,
+          (Math.random() - 0.5) * 0.6,
+          (Math.random() - 0.5) * 2.0
         );
-        puff.scale.y = 0.6 + Math.random() * 0.4;
+        puff.scale.y = 0.5 + Math.random() * 0.5;
         group.add(puff);
       }
       
-      const scale = 0.8 + Math.random() * 0.8;
+      const scale = 1.0 + Math.random() * 1.0;
       group.scale.set(scale, scale * 0.6, scale);
       group.userData = {
-        speed: 0.1 + Math.random() * 0.2,
+        speed: 0.08 + Math.random() * 0.15,
         angle: Math.random() * Math.PI * 2,
-        radius: 3 + Math.random() * 4,
-        height: (Math.random() - 0.5) * 3 + 1,
+        radius: 5 + Math.random() * 4,
+        height: (Math.random() - 0.5) * 3 + 1.5,
       };
       
       return group;
     }
 
-    // ============ TẠO TÊN BAY ============
-    function createNameLabel(text, color = '#ff66aa') {
+    // ============ TẠO TÊN HỌC SINH BAY ============
+    function createNameLabel(text, color = '#ff66aa', fontSize = '20px') {
       const div = document.createElement('div');
       div.textContent = text;
       div.style.color = color;
       div.style.fontFamily = "'Segoe UI', Arial, sans-serif";
-      div.style.fontSize = '18px';
+      div.style.fontSize = fontSize;
       div.style.fontWeight = '700';
       div.style.textShadow = `
         0 0 10px ${color},
@@ -510,8 +580,8 @@
         0 0 40px ${color},
         0 0 80px ${color}
       `;
-      div.style.background = 'rgba(255,100,150,0.08)';
-      div.style.padding = '4px 14px';
+      div.style.background = 'rgba(255,100,150,0.1)';
+      div.style.padding = '6px 18px';
       div.style.borderRadius = '30px';
       div.style.border = '1px solid rgba(255,100,180,0.2)';
       div.style.backdropFilter = 'blur(5px)';
@@ -522,14 +592,87 @@
       
       label.userData = {
         angle: Math.random() * Math.PI * 2,
-        radius: 2.8 + Math.random() * 1.2,
-        height: (Math.random() - 0.5) * 2.5,
-        speed: 0.3 + Math.random() * 0.3,
+        radius: 3.5 + Math.random() * 1.5,
+        height: (Math.random() - 0.5) * 3.2,
+        speed: 0.12 + Math.random() * 0.15,
         rotSpeed: (Math.random() - 0.5) * 0.02,
         phase: Math.random() * Math.PI * 2,
       };
       
       return label;
+    }
+
+    // ============ TẠO CHỮ "10A9" NHỎ BAY GẦN TIM ============
+    function createSmallText(text, color = '#ff8844', fontSize = '14px') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontFamily = "'Arial Black', 'Segoe UI', sans-serif";
+      div.style.fontSize = fontSize;
+      div.style.fontWeight = '900';
+      div.style.textShadow = `
+        0 0 10px ${color},
+        0 0 20px ${color},
+        0 0 40px ${color}
+      `;
+      div.style.background = 'rgba(255,136,68,0.08)';
+      div.style.padding = '3px 12px';
+      div.style.borderRadius = '16px';
+      div.style.border = '1px solid rgba(255,136,68,0.15)';
+      div.style.backdropFilter = 'blur(5px)';
+      div.style.letterSpacing = '2px';
+      div.style.whiteSpace = 'nowrap';
+      div.style.opacity = '0.5';
+      
+      const label = new CSS2DObject(div);
+      
+      label.userData = {
+        angle: Math.random() * Math.PI * 2,
+        radius: 2.0 + Math.random() * 0.5,
+        height: (Math.random() - 0.5) * 1.8,
+        speed: 0.5 + Math.random() * 0.3,
+        rotSpeed: 0.02,
+        phase: Math.random() * Math.PI * 2,
+      };
+      
+      return label;
+    }
+
+    // ============ TẠO HẠT SÁNG ============
+    function createParticles() {
+      const count = 500;
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      
+      for (let i = 0; i < count; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = 3 + Math.random() * 4;
+        
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.cos(phi);
+        positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+        
+        const c = new THREE.Color().setHSL(0.9 + Math.random() * 0.1, 1, 0.5 + Math.random() * 0.3);
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+      
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      
+      const material = new THREE.PointsMaterial({
+        size: 0.05,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+      });
+      
+      const particles = new THREE.Points(geometry, material);
+      return particles;
     }
 
     // ============ KHỞI TẠO 3D ============
@@ -553,7 +696,7 @@
       renderer.toneMappingExposure = 1.2;
       document.body.appendChild(renderer.domElement);
 
-      // ----- LABEL RENDERER (cho chữ) -----
+      // ----- LABEL RENDERER -----
       labelRenderer = new CSS2DRenderer();
       labelRenderer.setSize(window.innerWidth, window.innerHeight);
       labelRenderer.domElement.style.position = 'absolute';
@@ -569,87 +712,49 @@
       controls.autoRotate = false;
       controls.enableZoom = true;
       controls.rotateSpeed = 0.8;
-      controls.target.set(0, 0.2, 0);
+      controls.target.set(0, 0, 0);
       controls.update();
 
       // ----- LIGHTS -----
       const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
       scene.add(ambientLight);
 
-      mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      const mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
       mainLight.position.set(5, 8, 6);
       mainLight.castShadow = true;
       scene.add(mainLight);
 
-      const fillLight = new THREE.DirectionalLight(0x4488ff, 0.5);
+      const fillLight = new THREE.DirectionalLight(0xff4488, 0.6);
       fillLight.position.set(-4, 2, -3);
       scene.add(fillLight);
 
-      const rimLight = new THREE.DirectionalLight(0xff66aa, 0.3);
+      const rimLight = new THREE.DirectionalLight(0x4488ff, 0.4);
       rimLight.position.set(0, -3, 5);
       scene.add(rimLight);
 
-      // ===== CUBE PHÁT SÁNG =====
-      const geometry = new THREE.BoxGeometry(2, 2, 2);
-      const material = new THREE.MeshStandardMaterial({
-        color: 0x4488ff,
-        roughness: 0.2,
-        metalness: 0.3,
-        emissive: new THREE.Color(0x4488ff),
-        emissiveIntensity: 0.3,
-      });
-      cube = new THREE.Mesh(geometry, material);
-      cube.castShadow = true;
-      cube.receiveShadow = true;
-      scene.add(cube);
+      // ===== TRÁI TIM 3D =====
+      heartMesh = createHeart3D();
+      scene.add(heartMesh);
 
-      // Lớp glow
-      const glowGeom = new THREE.BoxGeometry(2.5, 2.5, 2.5);
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: 0x4488ff,
-        transparent: true,
-        opacity: 0.08,
-        wireframe: true,
-      });
-      cubeGlow = new THREE.Mesh(glowGeom, glowMat);
-      cube.add(cubeGlow);
+      // ===== HẠT SÁNG =====
+      particleSystem = createParticles();
+      scene.add(particleSystem);
 
-      // Lớp glow 2
-      const glowGeom2 = new THREE.BoxGeometry(3.2, 3.2, 3.2);
-      const glowMat2 = new THREE.MeshBasicMaterial({
-        color: 0x88ddff,
-        transparent: true,
-        opacity: 0.03,
-        wireframe: true,
-      });
-      const cubeGlow2 = new THREE.Mesh(glowGeom2, glowMat2);
-      cube.add(cubeGlow2);
-
-      // Viền sáng
-      const edges = new THREE.EdgesGeometry(geometry);
-      const lineMat = new THREE.LineBasicMaterial({
-        color: 0x88ddff,
-        transparent: true,
-        opacity: 0.3
-      });
-      wireframe = new THREE.LineSegments(edges, lineMat);
-      cube.add(wireframe);
-
-      // ===== TẠO TÊN BAY QUANH =====
-      const colors = ['#ff66aa', '#ff88bb', '#ff44aa', '#ff99cc', '#ff55bb'];
+      // ===== TẠO TÊN HỌC SINH BAY =====
+      const colors = ['#ff66aa', '#ff88bb', '#ff44aa', '#ff99cc', '#ff55bb', '#ff77aa', '#ff66cc', '#ff88dd'];
       
       nameList.forEach((name, index) => {
         const color = colors[index % colors.length];
-        const label = createNameLabel(name, color);
+        const label = createNameLabel(name, color, '22px');
         
-        const angle = (index / nameList.length) * Math.PI * 2;
-        const radius = 2.8 + Math.random() * 1.2;
-        const height = (Math.random() - 0.5) * 2.5;
+        const angle = (index / nameList.length) * Math.PI * 2 + 0.3;
+        const radius = 3.8 + Math.random() * 1.2;
+        const height = (Math.random() - 0.5) * 3.2;
         
         label.userData.angle = angle;
         label.userData.radius = radius;
         label.userData.height = height;
-        label.userData.speed = 0.2 + Math.random() * 0.2;
+        label.userData.speed = 0.12 + Math.random() * 0.12;
         
         label.position.set(
           Math.cos(angle) * radius,
@@ -661,32 +766,43 @@
         nameObjects.push(label);
       });
 
-      // ===== TẠO TRÁI TIM =====
-      const heartColors = [0xff3366, 0xff6699, 0xff0066, 0xff4488];
-      for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2;
-        const radius = 3.5;
-        const heart = createHeart(0.25 + Math.random() * 0.15, heartColors[i % heartColors.length]);
-        heart.position.set(
+      // ===== TẠO CHỮ "10A9" NHỎ BAY GẦN TIM =====
+      const smallTexts = [
+        "10A9", "10A9", "10A9", "10A9", "10A9",
+        "10A9", "10A9", "10A9", "10A9", "10A9",
+        "10A9", "10A9", "10A9", "10A9", "10A9",
+        "10A9", "10A9", "10A9", "10A9", "10A9"
+      ];
+      
+      smallTexts.forEach((text, index) => {
+        const colors2 = ['#ff8844', '#ff9944', '#ffaa55', '#ffbb66', '#ffcc77'];
+        const color = colors2[index % colors2.length];
+        const label = createSmallText(text, color, '14px');
+        
+        const angle = (index / smallTexts.length) * Math.PI * 2 + 0.5;
+        const radius = 2.2 + Math.random() * 0.4;
+        const height = (Math.random() - 0.5) * 1.8;
+        
+        label.userData.angle = angle;
+        label.userData.radius = radius;
+        label.userData.height = height;
+        label.userData.speed = 0.5 + Math.random() * 0.3;
+        
+        label.position.set(
           Math.cos(angle) * radius,
-          (Math.random() - 0.5) * 1.5,
+          height,
           Math.sin(angle) * radius
         );
-        heart.userData = {
-          angle: angle,
-          radius: radius,
-          height: heart.position.y,
-          speed: 0.3 + Math.random() * 0.2,
-        };
-        scene.add(heart);
-        heartObjects.push(heart);
-      }
+        
+        scene.add(label);
+        smallTextObjects.push(label);
+      });
 
       // ===== TẠO MÂY =====
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         const cloud = createCloud();
         const angle = Math.random() * Math.PI * 2;
-        const radius = 4 + Math.random() * 3;
+        const radius = 5 + Math.random() * 4;
         cloud.position.set(
           Math.cos(angle) * radius,
           (Math.random() - 0.5) * 2 + 1.5,
@@ -716,16 +832,6 @@
       if (savedNote) {
         noteInput.value = savedNote;
         noteDisplay.textContent = savedNote;
-      }
-
-      const savedImage = localStorage.getItem('cubeImage');
-      if (savedImage) {
-        const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load(savedImage);
-        cube.material.map = texture;
-        cube.material.emissive = new THREE.Color(0x000000);
-        cube.material.emissiveIntensity = 0;
-        cube.material.needsUpdate = true;
       }
     }
 
@@ -773,28 +879,7 @@
       }
     }
 
-    // ============ TẢI ẢNH ============
-    function loadImage(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load(e.target.result);
-        cube.material.map = texture;
-        cube.material.emissive = new THREE.Color(0x000000);
-        cube.material.emissiveIntensity = 0;
-        cube.material.needsUpdate = true;
-        localStorage.setItem('cubeImage', e.target.result);
-        document.getElementById('adminStatus').textContent = '✅ Ảnh đã tải: ' + file.name;
-        document.getElementById('adminStatus').style.color = '#0f0';
-      };
-      reader.readAsDataURL(file);
-    }
-
     // ============ XỬ LÝ SỰ KIỆN ADMIN ============
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-      if (this.files.length > 0) loadImage(this.files[0]);
-    });
-
     document.getElementById('musicInput').addEventListener('change', function(e) {
       if (this.files.length > 0) initAudio(this.files[0]);
     });
@@ -805,7 +890,7 @@
       localStorage.setItem('cubeNote', note);
     });
 
-    // ============ BẬT ADMIN (CLICK 3 LẦN) ============
+    // ============ BẬT ADMIN ============
     let clickCount = 0;
     let clickTimer = null;
     
@@ -833,18 +918,16 @@
       requestAnimationFrame(animate);
       time += 0.01;
 
-      // Cube tự xoay nhẹ
-      if (cube) {
-        cube.rotation.x += 0.002;
-        cube.rotation.y += 0.004;
-        cube.rotation.z += 0.001;
+      // Trái tim xoay và nhảy
+      if (heartMesh) {
+        heartMesh.rotation.x += 0.003;
+        heartMesh.rotation.y += 0.006;
+        heartMesh.rotation.z += 0.002;
         
-        // Glow nhấp nháy
-        if (cubeGlow) {
-          cubeGlow.material.opacity = 0.06 + Math.sin(time * 0.5) * 0.03;
+        if (heartGlow) {
+          heartGlow.material.opacity = 0.05 + Math.sin(time * 0.5) * 0.03;
         }
         
-        // Nhảy theo nhạc
         if (isPlaying && analyser && dataArray) {
           analyser.getByteFrequencyData(dataArray);
           
@@ -855,44 +938,46 @@
           }
           bass = bass / (len * 0.3) / 255;
           
-          const bounceHeight = (bass - 0.1) * 0.8;
-          cube.position.y = Math.max(0, bounceHeight);
-          
-          if (wireframe) {
-            wireframe.material.opacity = 0.2 + bass * 0.5;
-          }
-          
-          if (mainLight) {
-            mainLight.intensity = 1.2 + bass * 0.8;
-          }
+          const bounceHeight = (bass - 0.1) * 0.5;
+          heartMesh.position.y = Math.max(0, bounceHeight);
+          const scaleHeart = 1 + bass * 0.04;
+          heartMesh.scale.set(
+            1.8 * scaleHeart,
+            1.8 * scaleHeart,
+            1.8 * scaleHeart
+          );
         }
       }
 
-      // Tên bay vòng quanh
+      // ===== TÊN HỌC SINH BAY =====
       nameObjects.forEach((label) => {
         const data = label.userData;
-        data.angle += data.speed * 0.02;
-        const radius = data.radius + Math.sin(time * data.speed + data.phase) * 0.3;
+        data.angle += data.speed * 0.025;
+        const radius = data.radius + Math.sin(time * data.speed * 0.8 + data.phase) * 0.3;
         label.position.x = Math.cos(data.angle) * radius;
         label.position.z = Math.sin(data.angle) * radius;
-        label.position.y = data.height + Math.sin(time * data.speed + data.phase) * 0.5;
-        
-        // Tự xoay nhẹ
+        label.position.y = data.height + Math.sin(time * data.speed * 0.6 + data.phase) * 0.5;
         label.rotation.y += data.rotSpeed || 0.01;
       });
 
-      // Trái tim bay
-      heartObjects.forEach((heart) => {
-        const data = heart.userData;
-        data.angle += data.speed * 0.015;
-        heart.position.x = Math.cos(data.angle) * data.radius;
-        heart.position.z = Math.sin(data.angle) * data.radius;
-        heart.position.y = data.height + Math.sin(time * data.speed + data.angle) * 0.3;
-        heart.rotation.x = Math.sin(time + data.angle) * 0.2;
-        heart.rotation.z = Math.cos(time + data.angle) * 0.2;
+      // ===== CHỮ "10A9" NHỎ BAY GẦN TIM =====
+      smallTextObjects.forEach((label) => {
+        const data = label.userData;
+        data.angle += data.speed * 0.03;
+        const radius = data.radius + Math.sin(time * data.speed * 1.5 + data.phase) * 0.15;
+        label.position.x = Math.cos(data.angle) * radius;
+        label.position.z = Math.sin(data.angle) * radius;
+        label.position.y = data.height + Math.sin(time * data.speed * 1.2 + data.phase) * 0.2;
+        label.rotation.y += data.rotSpeed || 0.02;
       });
 
-      // Mây bay
+      // ===== HẠT SÁNG =====
+      if (particleSystem) {
+        particleSystem.rotation.y += 0.001;
+        particleSystem.rotation.x += 0.0005;
+      }
+
+      // ===== MÂY =====
       cloudObjects.forEach((cloud) => {
         const data = cloud.userData;
         data.angle += data.speed * 0.005;
@@ -903,7 +988,6 @@
 
       controls.update();
       
-      // Render cả 2
       renderer.render(scene, camera);
       labelRenderer.render(scene, camera);
     }
@@ -922,12 +1006,11 @@
       }
     });
 
-    // ============ HƯỚNG DẪN ============
     console.log('🎯 HƯỚNG DẪN:');
     console.log('1️⃣ Bấm "XEM VIDEO" để bắt đầu');
-    console.log('2️⃣ Kéo chuột xoay cube');
+    console.log('2️⃣ Kéo chuột xoay không gian');
     console.log('3️⃣ Admin: Click 3 lần vào ⚙️ để mở panel');
-    console.log('4️⃣ Chọn ảnh và nhạc của bạn');
+    console.log('4️⃣ Chọn nhạc của bạn');
   </script>
 </body>
 </html>
